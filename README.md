@@ -48,7 +48,6 @@ PortableNoise additional:
   - The following is the benchmark of 10K of 16KB messages.
 
 
-```
 | Method                                          | Job           | Runtime       | Mean    | Error    | StdDev   |
 |------------------------------------------------ |-------------- |-------------- |--------:|---------:|---------:|
 | Noisenet                                        | .NET 9.0      | .NET 9.0      | 3.124 s | 0.0011 s | 0.0009 s |
@@ -65,7 +64,6 @@ PortableNoise additional:
 | PortableNoiseBouncyCastle448MultipleSeg         | NativeAOT 9.0 | NativeAOT 9.0 | 4.272 s | 0.0172 s | 0.0152 s |
 
 
-```
 
 Todo:
 
