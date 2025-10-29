@@ -22,26 +22,18 @@ namespace PortableNoise.Engine.BouncyCastle
         public int HashLen => 32;
         public int BlockLen => 64;
 
-        public void AppendData(ReadOnlyMemory<byte> data)
+        public void AppendData(ReadOnlySpan<byte> data)
         {
-            if (!MemoryMarshal.TryGetArray(data, out ArraySegment<byte> adata))
-            {
-                throw new InvalidOperationException("Buffer backed by array was expected");
-            }
-            hash.BlockUpdate(adata.Array, adata.Offset, adata.Count);
+            hash.BlockUpdate(data);
         }
 
         public void Dispose()
         {
         }
 
-        public void GetHashAndReset(Memory<byte> fhash)
+        public void GetHashAndReset(Span<byte> fhash)
         {
-            if (!MemoryMarshal.TryGetArray(fhash, out ArraySegment<byte> adata))
-            {
-                throw new InvalidOperationException("Buffer backed by array was expected");
-            }
-            hash.DoFinal(adata.Array, adata.Offset);
+            hash.DoFinal(fhash);
             hash.Reset();
         }
     }

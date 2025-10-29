@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Collections.Immutable;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -15,41 +16,25 @@ namespace TestHelper
 
 
     [Generator]
-    public class FileTransformGenerator : ISourceGenerator
+    public class FileTransformGenerator : IIncrementalGenerator
     {
-        public void Initialize(GeneratorInitializationContext context)
+        public void Initialize(IncrementalGeneratorInitializationContext context)
         {
+            // Get all additional text files
+            var additionalTexts = context.AdditionalTextsProvider
+                .Where(text => text.Path.Contains("Vectors") && text.Path.EndsWith(".txt"))
+                .Collect();
 
+            // Register source output
+            context.RegisterSourceOutput(additionalTexts, (spc, texts) => Execute(spc, texts));
         }
-        bool ignoreNoisePSK = false;
-        public void Execute(GeneratorExecutionContext context)
+
+        private void Execute(SourceProductionContext context, ImmutableArray<AdditionalText> additionalTexts)
         {
-            context.AnalyzerConfigOptions.GlobalOptions.TryGetValue("build_property.MSBuildProjectDirectory", out var projectDirectory);
-            if (projectDirectory == null)
+            if (additionalTexts.IsEmpty)
             {
-                projectDirectory = "";
+                return;
             }
-            if (!File.Exists(Path.Combine(projectDirectory, "Vectors/cacophony.txt")))
-            {
-                var mainSyntaxTree = context.Compilation.SyntaxTrees
-                        .First(x => x.HasCompilationUnitRoot);
-                var projectDirectory2 = Path.GetDirectoryName(mainSyntaxTree.FilePath);
-
-                while (true)
-                {
-                    if (File.Exists(Path.Combine(projectDirectory2, "Vectors/cacophony.txt")))
-                    {
-                        break;
-                    }
-                    if (projectDirectory2.Length < 3)
-                    {
-                        throw new Exception($"No {projectDirectory} and {projectDirectory2}");
-                    }
-                    projectDirectory2 = Path.GetDirectoryName(projectDirectory2);
-                }
-                projectDirectory = projectDirectory2;
-            }
-
 
             StringBuilder sb = new StringBuilder();
             sb.Append($@"
@@ -76,23 +61,64 @@ namespace PortableNoise.Tests
 
 ");
 
+            bool ignoreNoisePSK = false;
 
-            var s = File.ReadAllText(Path.Combine(projectDirectory, "Vectors/cacophony.txt"));
-            GenerateTests(s, sb, "_cacophony", "CoreTest");
+            // Process cacophony.txt
+            var cacophonyFile = additionalTexts.FirstOrDefault(t => t.Path.Contains("cacophony.txt") && !t.Path.Contains("\\c\\"));
+            if (cacophonyFile != null)
+            {
+                var s = cacophonyFile.GetText(context.CancellationToken)?.ToString();
+                if (s != null)
+                {
+                    GenerateTests(s, sb, "_cacophony", "CoreTest", ignoreNoisePSK);
+                }
+            }
 
-            s = File.ReadAllText(Path.Combine(projectDirectory, "Vectors/snow-multipsk.txt"));
-            GenerateTests(s, sb, "_multipsk", "CoreTest");
+            // Process snow-multipsk.txt
+            var multipskFile = additionalTexts.FirstOrDefault(t => t.Path.Contains("snow-multipsk.txt"));
+            if (multipskFile != null)
+            {
+                var s = multipskFile.GetText(context.CancellationToken)?.ToString();
+                if (s != null)
+                {
+                    GenerateTests(s, sb, "_multipsk", "CoreTest", ignoreNoisePSK);
+                }
+            }
 
-            s = File.ReadAllText(Path.Combine(projectDirectory, "Vectors/noise-c-fallback.txt"));
-            GenerateTests(s, sb, "_fb", "CoreTestFallback");
+            // Process noise-c-fallback.txt
+            var fallbackFile = additionalTexts.FirstOrDefault(t => t.Path.Contains("noise-c-fallback.txt"));
+            if (fallbackFile != null)
+            {
+                var s = fallbackFile.GetText(context.CancellationToken)?.ToString();
+                if (s != null)
+                {
+                    GenerateTests(s, sb, "_fb", "CoreTestFallback", ignoreNoisePSK);
+                }
+            }
 
             ignoreNoisePSK = true;
 
-            s = File.ReadAllText(Path.Combine(projectDirectory, "Vectors/c/cacophony.txt"));
-            GenerateTests(s, sb, "_ncacophony", "CoreTest");
+            // Process c/cacophony.txt
+            var cCacophonyFile = additionalTexts.FirstOrDefault(t => t.Path.Contains("\\c\\") && t.Path.Contains("cacophony.txt"));
+            if (cCacophonyFile != null)
+            {
+                var s = cCacophonyFile.GetText(context.CancellationToken)?.ToString();
+                if (s != null)
+                {
+                    GenerateTests(s, sb, "_ncacophony", "CoreTest", ignoreNoisePSK);
+                }
+            }
 
-            s = File.ReadAllText(Path.Combine(projectDirectory, "Vectors/c/noise-c-basic.txt"));
-            GenerateTests(s, sb, "_ncb", "CoreTest");
+            // Process c/noise-c-basic.txt
+            var cBasicFile = additionalTexts.FirstOrDefault(t => t.Path.Contains("\\c\\") && t.Path.Contains("noise-c-basic.txt"));
+            if (cBasicFile != null)
+            {
+                var s = cBasicFile.GetText(context.CancellationToken)?.ToString();
+                if (s != null)
+                {
+                    GenerateTests(s, sb, "_ncb", "CoreTest", ignoreNoisePSK);
+                }
+            }
 
             sb.Append("/*");
             sb.Append("*/");
@@ -104,7 +130,7 @@ namespace PortableNoise.Tests
             context.AddSource("NoiseTest.Generated.cs", sb.ToString());
         }
 
-        private void GenerateTests(string s, StringBuilder sb,string postfix,string testfunc)
+        private void GenerateTests(string s, StringBuilder sb,string postfix,string testfunc, bool ignoreNoisePSK)
         {
             var json = JObject.Parse(s);
             if (true)

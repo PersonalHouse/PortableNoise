@@ -18,15 +18,15 @@ namespace PortableNoise
 		/// </summary>
 		int BlockLen { get; }
 
-		/// <summary>
-		/// Appends the specified data to the data already processed in the hash.
-		/// </summary>
-		void AppendData(ReadOnlyMemory<byte> data);
+	/// <summary>
+	/// Appends the specified data to the data already processed in the hash.
+	/// </summary>
+	void AppendData(ReadOnlySpan<byte> data);
 
-		/// <summary>
-		/// Retrieves the hash for the accumulated data into the hash parameter,
-		/// and resets the object to its initial state.
-		/// </summary>
-		void GetHashAndReset(Memory<byte> hash);
+	/// <summary>
+	/// Retrieves the hash for the accumulated data into the hash parameter,
+	/// and resets the object to its initial state.
+	/// </summary>
+	void GetHashAndReset(Span<byte> hash);
 	}
 }

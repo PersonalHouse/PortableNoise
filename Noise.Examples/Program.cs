@@ -66,9 +66,7 @@ namespace PortableNoise.Examples
 
 				// Receive the second handshake message from the server.
 				var received = await serverToClient.Receive();
-                var lis =new List<ArraySegment<byte>>();
-                lis.Add(received);
-                var (_, _, transport) = handshakeState.ReadMessage(lis, buffer);
+                var (_, _, transport) = handshakeState.ReadMessage(received, buffer);
 
 				// Handshake complete, switch to transport mode.
 				using (transport)
@@ -78,16 +76,12 @@ namespace PortableNoise.Examples
 						var request = Encoding.UTF8.GetBytes(message);
 
                         // Send the message to the server.
-                        lis.Clear();
-                        lis.Add(request);
-                        bytesWritten = transport.WriteMessage(lis, buffer);
+                        bytesWritten = transport.WriteMessage(request, buffer);
 						await clientToServer.Send(Slice(buffer, bytesWritten));
 
 						// Receive the response and print it to the standard output.
 						var response = await serverToClient.Receive();
-                        lis.Clear();
-                        lis.Add(response);
-                        var bytesRead = transport.ReadMessage(lis, buffer);
+                        var bytesRead = transport.ReadMessage(response, buffer);
 
 						Console.WriteLine(Encoding.UTF8.GetString(Slice(buffer, bytesRead)));
 					}
@@ -103,9 +97,7 @@ namespace PortableNoise.Examples
 			{
 				// Receive the first handshake message from the client.
 				var received = await clientToServer.Receive();
-                var lis = new List<ArraySegment<byte>>();
-                lis.Add(received);
-                handshakeState.ReadMessage(lis, buffer);
+                handshakeState.ReadMessage(received, buffer);
 
 				// Send the second handshake message to the client.
 				var (bytesWritten, _, transport) = handshakeState.WriteMessage(null, buffer);
@@ -118,14 +110,10 @@ namespace PortableNoise.Examples
 					{
 						// Receive the message from the client.
 						var request = await clientToServer.Receive();
-                        lis.Clear();
-                        lis.Add(request);
-                        var bytesRead = transport.ReadMessage(lis, buffer);
+                        var bytesRead = transport.ReadMessage(request, buffer);
 
                         // Echo the message back to the client.
-                        lis.Clear();
-                        lis.Add(Slice(buffer, bytesRead));
-                        bytesWritten = transport.WriteMessage(lis, buffer);
+                        bytesWritten = transport.WriteMessage(buffer.AsSpan(0, bytesRead), buffer);
 						await serverToClient.Send(Slice(buffer, bytesWritten));
 					}
 				}

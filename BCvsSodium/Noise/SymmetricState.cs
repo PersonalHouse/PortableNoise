@@ -136,7 +136,7 @@ namespace Noise
 		public (CipherState<CipherType> c1, CipherState<CipherType> c2) Split()
 		{
 			Span<byte> output = stackalloc byte[2 * hash.HashLen];
-			hkdf.ExtractAndExpand2(ck, null, output);
+			hkdf.ExtractAndExpand2(ck, ReadOnlySpan<byte>.Empty, output);
 
 			var tempK1 = output.Slice(0, Aead.KeySize);
 			var tempK2 = output.Slice(hash.HashLen, Aead.KeySize);

@@ -128,13 +128,10 @@ namespace BCvsSodium
                     // Send the first handshake message to the server.
                     var (bytesWrittenc, _, _) = handshakeStatec.WriteMessage(null, bufferc);
 
-                    var lis = new List<ArraySegment<byte>>();
-                    lis.Add(bufferc.AsArraySegment(0, bytesWrittenc));
-                    handshakeStates.ReadMessage(lis, buffers);
+                    handshakeStates.ReadMessage(bufferc.AsSpan(0, bytesWrittenc), buffers);
                     var (bytesWrittens, _, transports) = handshakeStates.WriteMessage(null, buffers);
 
-                    lis[0] = buffers.AsArraySegment(0, bytesWrittens);
-                    var (_, _, transportc) = handshakeStatec.ReadMessage(lis, bufferc);
+                    var (_, _, transportc) = handshakeStatec.ReadMessage(buffers.AsSpan(0, bytesWrittens), bufferc);
 
                     // Handshake complete, switch to transport mode.
                     using (transportc)
@@ -142,16 +139,14 @@ namespace BCvsSodium
                     {
                         foreach (var message in messages)
                         {
-                            ArraySegment<byte> request = message;
+                            byte[] request = message;
 
                             // Send the message to the server.
 
-                            lis[0] = request;
-                            bytesWrittenc = transportc.WriteMessage(lis, bufferc);
+                            bytesWrittenc = transportc.WriteMessage(request, bufferc);
 
 
-                            lis[0] = bufferc.AsArraySegment(0, bytesWrittenc);
-                            var bytesReads = transports.ReadMessage(lis, buffers);
+                            var bytesReads = transports.ReadMessage(bufferc.AsSpan(0, bytesWrittenc), buffers);
 
                             if (!request.AsSpan().SequenceEqual(buffers.AsSpan(0, bytesReads)))
                             {
@@ -195,13 +190,10 @@ namespace BCvsSodium
                     // Send the first handshake message to the server.
                     var (bytesWrittenc, _, _) = handshakeStatec.WriteMessage(null, bufferc);
 
-                    var lis = new List<ArraySegment<byte>>();
-                    lis.Add(bufferc.AsArraySegment(0, bytesWrittenc));
-                    handshakeStates.ReadMessage(lis, buffers);
+                    handshakeStates.ReadMessage(bufferc.AsSpan(0, bytesWrittenc), buffers);
                     var (bytesWrittens, _, transports) = handshakeStates.WriteMessage(null, buffers);
 
-                    lis[0] = buffers.AsArraySegment(0, bytesWrittens);
-                    var (_, _, transportc) = handshakeStatec.ReadMessage(lis, bufferc);
+                    var (_, _, transportc) = handshakeStatec.ReadMessage(buffers.AsSpan(0, bytesWrittens), bufferc);
 
                     // Handshake complete, switch to transport mode.
                     using (transportc)
@@ -209,16 +201,14 @@ namespace BCvsSodium
                     {
                         foreach (var message in messages)
                         {
-                            ArraySegment<byte> request = message;
+                            byte[] request = message;
 
                             // Send the message to the server.
 
-                            lis[0] = request;
-                            bytesWrittenc = transportc.WriteMessage(lis, bufferc);
+                            bytesWrittenc = transportc.WriteMessage(request, bufferc);
 
 
-                            lis[0] = bufferc.AsArraySegment(0, bytesWrittenc);
-                            var bytesReads = transports.ReadMessage(lis, buffers);
+                            var bytesReads = transports.ReadMessage(bufferc.AsSpan(0, bytesWrittenc), buffers);
 
                             if (!request.AsSpan().SequenceEqual(buffers.AsSpan(0, bytesReads)))
                             {
@@ -262,13 +252,10 @@ namespace BCvsSodium
                     // Send the first handshake message to the server.
                     var (bytesWrittenc, _, _) = handshakeStatec.WriteMessage(null, bufferc);
 
-                    var lis = new List<ArraySegment<byte>>();
-                    lis.Add(bufferc.AsArraySegment(0, bytesWrittenc));
-                    handshakeStates.ReadMessage(lis, buffers);
+                    handshakeStates.ReadMessage(bufferc.AsSpan(0, bytesWrittenc), buffers);
                     var (bytesWrittens, _, transports) = handshakeStates.WriteMessage(null, buffers);
 
-                    lis[0] = buffers.AsArraySegment(0, bytesWrittens);
-                    var (_, _, transportc) = handshakeStatec.ReadMessage(lis, bufferc);
+                    var (_, _, transportc) = handshakeStatec.ReadMessage(buffers.AsSpan(0, bytesWrittens), bufferc);
 
                     // Handshake complete, switch to transport mode.
                     using (transportc)
@@ -276,16 +263,14 @@ namespace BCvsSodium
                     {
                         foreach (var message in messages)
                         {
-                            ArraySegment<byte> request = message;
+                            byte[] request = message;
 
                             // Send the message to the server.
 
-                            lis[0] = request;
-                            bytesWrittenc = transportc.WriteMessage(lis, bufferc);
+                            bytesWrittenc = transportc.WriteMessage(request, bufferc);
 
 
-                            lis[0] = bufferc.AsArraySegment(0, bytesWrittenc);
-                            var bytesReads = transports.ReadMessage(lis, buffers);
+                            var bytesReads = transports.ReadMessage(bufferc.AsSpan(0, bytesWrittenc), buffers);
 
                             if (!request.AsSpan().SequenceEqual(buffers.AsSpan(0, bytesReads)))
                             {
@@ -330,14 +315,10 @@ namespace BCvsSodium
                     // Send the first handshake message to the server.
                     var (bytesWrittenc, _, _) = handshakeStatec.WriteMessage(null, bufferc);
 
-                    var lis = new List<ArraySegment<byte>>();
-                    var lis2 = new List<ArraySegment<byte>>();
-                    lis.Add(bufferc.AsArraySegment(0, bytesWrittenc));
-                    handshakeStates.ReadMessage(lis, buffers);
+                    handshakeStates.ReadMessage(bufferc.AsSpan(0, bytesWrittenc), buffers);
                     var (bytesWrittens, _, transports) = handshakeStates.WriteMessage(null, buffers);
 
-                    lis[0] = buffers.AsArraySegment(0, bytesWrittens);
-                    var (_, _, transportc) = handshakeStatec.ReadMessage(lis, bufferc);
+                    var (_, _, transportc) = handshakeStatec.ReadMessage(buffers.AsSpan(0, bytesWrittens), bufferc);
 
                     // Handshake complete, switch to transport mode.
                     using (transportc)
@@ -354,12 +335,10 @@ namespace BCvsSodium
                             System.Buffer.BlockCopy(request1, 0, request, 0, request1.Length);
                             System.Buffer.BlockCopy(request2, 0, request, request1.Length, request2.Length);
 
-                            lis[0] = request.AsArraySegment();
-                            bytesWrittenc = transportc.WriteMessage(lis, bufferc);
+                            bytesWrittenc = transportc.WriteMessage(request, bufferc);
 
 
-                            lis[0] = bufferc.AsArraySegment(0, bytesWrittenc);
-                            var bytesReads = transports.ReadMessage(lis, buffers);
+                            var bytesReads = transports.ReadMessage(bufferc.AsSpan(0, bytesWrittenc), buffers);
 
                             //                             if (!request.AsSpan().SequenceEqual(bufferc.AsSpan(0, bytesReadc)))
                             //                             {
@@ -404,16 +383,10 @@ namespace BCvsSodium
                     // Send the first handshake message to the server.
                     var (bytesWrittenc, _, _) = handshakeStatec.WriteMessage(null, bufferc);
 
-                    var lis = new List<ArraySegment<byte>>();
-                    var lis2 = new List<ArraySegment<byte>>();
-                    lis2.Add(new ArraySegment<byte>());
-                    lis2.Add(new ArraySegment<byte>());
-                    lis.Add(bufferc.AsArraySegment(0, bytesWrittenc));
-                    handshakeStates.ReadMessage(lis, buffers);
+                    handshakeStates.ReadMessage(bufferc.AsSpan(0, bytesWrittenc), buffers);
                     var (bytesWrittens, _, transports) = handshakeStates.WriteMessage(null, buffers);
 
-                    lis[0] = buffers.AsArraySegment(0, bytesWrittens);
-                    var (_, _, transportc) = handshakeStatec.ReadMessage(lis, bufferc);
+                    var (_, _, transportc) = handshakeStatec.ReadMessage(buffers.AsSpan(0, bytesWrittens), bufferc);
 
                     // Handshake complete, switch to transport mode.
                     using (transportc)
@@ -426,14 +399,15 @@ namespace BCvsSodium
                             byte[] request2 = messages[i + 1];
 
                             // Send the message to the server.
+                            // Combine the two messages into one buffer
+                            byte[] combinedRequest = new byte[request1.Length + request2.Length];
+                            System.Buffer.BlockCopy(request1, 0, combinedRequest, 0, request1.Length);
+                            System.Buffer.BlockCopy(request2, 0, combinedRequest, request1.Length, request2.Length);
 
-                            lis2[0] = request1;
-                            lis2[1] = request2;
-                            bytesWrittenc = transportc.WriteMessage(lis2, bufferc);
+                            bytesWrittenc = transportc.WriteMessage(combinedRequest, bufferc);
 
 
-                            lis[0] = bufferc.AsArraySegment(0, bytesWrittenc);
-                            var bytesReads = transports.ReadMessage(lis, buffers);
+                            var bytesReads = transports.ReadMessage(bufferc.AsSpan(0, bytesWrittenc), buffers);
 
 
                         }

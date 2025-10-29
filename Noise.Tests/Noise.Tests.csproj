@@ -1,20 +1,20 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.3">
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.0.1" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-		<PackageReference Include="xunit" Version="2.4.1" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+		<PackageReference Include="xunit" Version="2.9.3" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -23,11 +23,22 @@
 		<None Update="Vectors/noise-c-fallback.txt" CopyToOutputDirectory="PreserveNewest" />
 		<None Update="Vectors/snow-multipsk.txt" CopyToOutputDirectory="PreserveNewest" />
 		<None Update="Vectors\cacophony.txt" CopyToOutputDirectory="PreserveNewest" />
+		
+		<!-- Add vector files as AdditionalFiles for source generator -->
+		<AdditionalFiles Include="Vectors\cacophony.txt" />
+		<AdditionalFiles Include="Vectors\snow-multipsk.txt" />
+		<AdditionalFiles Include="Vectors\noise-c-fallback.txt" />
+		<AdditionalFiles Include="Vectors\c\cacophony.txt" />
+		<AdditionalFiles Include="Vectors\c\noise-c-basic.txt" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\Noise\PortableNoise.csproj" />
 		<ProjectReference Include="..\TestHelper\Noise.TestHelper.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Update="Nerdbank.GitVersioning" Version="3.8.118" />
 	</ItemGroup>
 
 </Project>

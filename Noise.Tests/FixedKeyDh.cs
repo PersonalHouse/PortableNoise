@@ -26,12 +26,12 @@ namespace PortableNoise.Tests
             return dh.GenerateKeyPair(privateKey);
 		}
 
-		public KeyPair GenerateKeyPair(ReadOnlyMemory<byte> privateKey)
+		public KeyPair GenerateKeyPair(ReadOnlySpan<byte> privateKey)
 		{
 			return dh.GenerateKeyPair(privateKey);
 		}
 
-		public void Dh(KeyPair keyPair, ReadOnlyMemory<byte> publicKey, Span<byte> sharedKey)
+		public void Dh(KeyPair keyPair, ReadOnlySpan<byte> publicKey, Span<byte> sharedKey)
 		{
 			dh.Dh(keyPair, publicKey, sharedKey);
 		}

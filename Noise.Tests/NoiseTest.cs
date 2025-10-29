@@ -81,10 +81,10 @@ namespace PortableNoise.Tests
 
             foreach (var message in vector["messages"])
             {
-                var payload =GetSeq(GetBytes(message, "payload"));
+                var payload = GetBytes(message, "payload");
                 var ciphertext = GetBytes(message, "ciphertext");
 
-                List<ArraySegment<byte>> initMessage;
+                byte[] initMessage;
                 Span<byte> respMessage = null;
 
                 int initMessageSize;
@@ -94,27 +94,24 @@ namespace PortableNoise.Tests
                 if (initTransport == null && respTransport == null)
                 {
                     (initMessageSize, initHandshakeHash, initTransport) = init.WriteMessage(payload, initBuffer);
-                    initMessage = new List<ArraySegment<byte>>();
-                    initMessage.Add(initBuffer.AsArraySegment(0, initMessageSize));
+                    initMessage = initBuffer.AsSpan(0, initMessageSize).ToArray();
 
                     (respMessageSize, respHandshakeHash, respTransport) = resp.ReadMessage(initMessage, respBuffer);
                     respMessage = respBuffer.AsSpan(0, respMessageSize);
 
-                    initMessage = new List<ArraySegment<byte>>();
-                    initMessage.Add(initBuffer.AsArraySegment(0, initMessageSize));
+                    initMessage = initBuffer.AsSpan(0, initMessageSize).ToArray();
                 }
                 else
                 {
                     initMessageSize = initTransport.WriteMessage(payload, initBuffer);
-                    initMessage = new List<ArraySegment<byte>>();
-                    initMessage.Add(initBuffer.AsArraySegment(0, initMessageSize));
+                    initMessage = initBuffer.AsSpan(0, initMessageSize).ToArray();
 
                     respMessageSize = respTransport.ReadMessage(initMessage, respBuffer);
                     respMessage = respBuffer.AsSpan(0, respMessageSize);
                 }
 
-                Assert.Equal(ciphertext, initMessage.MergeToSpan().ToArray());
-                Assert.Equal(payload.MergeToSpan().ToArray(), respMessage.ToArray());
+                Assert.Equal(ciphertext, initMessage);
+                Assert.Equal(payload, respMessage.ToArray());
 
                 Swap(ref initBuffer, ref respBuffer);
                 Swap(ref init, ref resp);
@@ -138,21 +135,7 @@ namespace PortableNoise.Tests
             respTransport.Dispose();
         }
 
-        private List<ArraySegment<byte>> GetSeq(byte[] vs)
-        {
 
-            var lis = new List<ArraySegment<byte>>();
-
-            var sn = Random.Shared.Next(0,vs.Length+1);
-            if ((sn==0)|| (sn == vs.Length))
-            {
-                lis.Add(vs);
-                return lis;
-            }
-            lis.Add(new ArraySegment<byte>(vs, 0, sn));
-            lis.Add(new ArraySegment<byte>(vs, sn, vs.Length-sn));
-            return lis;
-        }
 
         private void CoreTestFallback<CipherType, DHType, HashType>(HandshakePattern handshake, PatternModifiers pattern, string content)
                 where CipherType : Cipher, new()
@@ -202,11 +185,11 @@ namespace PortableNoise.Tests
 
             foreach (var message in vector["messages"])
             {
-                var payload = GetSeq(GetBytes(message, "payload"));
+                var payload = GetBytes(message, "payload");
                 var ciphertext = GetBytes(message, "ciphertext");
 
-                List<ArraySegment<byte>> initMessage;
-                List<ArraySegment<byte>> respMessage = default;
+                byte[] initMessage;
+                byte[] respMessage = default;
 
                 int initMessageSize;
                 int respMessageSize;
@@ -214,8 +197,7 @@ namespace PortableNoise.Tests
                 if (!fallback)
                 {
                     (initMessageSize, initHandshakeHash, initTransport) = init.WriteMessage(payload, initBuffer);
-                    initMessage = new List<ArraySegment<byte>>();
-                    initMessage.Add(initBuffer.AsArraySegment(0, initMessageSize));
+                    initMessage = initBuffer.AsSpan(0, initMessageSize).ToArray();
 
                     try
                     {
@@ -224,8 +206,7 @@ namespace PortableNoise.Tests
                     catch (CryptographicException)
                     {
 
-                        initMessage = new List<ArraySegment<byte>>();
-                        initMessage.Add(initBuffer.AsArraySegment(0, initMessageSize));
+                        initMessage = initBuffer.AsSpan(0, initMessageSize).ToArray();
 
                         var initConfig = new ProtocolConfig { Prologue = initPrologue, LocalStatic = initStatic };
                         init.Fallback(fallbackProtocol, initConfig);
@@ -240,34 +221,28 @@ namespace PortableNoise.Tests
                 else if (initTransport == null && respTransport == null)
                 {
                     (initMessageSize, initHandshakeHash, initTransport) = init.WriteMessage(payload, initBuffer);
-                    initMessage = new List<ArraySegment<byte>>();
-                    initMessage.Add(initBuffer.AsArraySegment(0, initMessageSize));
+                    initMessage = initBuffer.AsSpan(0, initMessageSize).ToArray();
 
                     (respMessageSize, respHandshakeHash, respTransport) = resp.ReadMessage(initMessage, respBuffer);
-                    respMessage = new List<ArraySegment<byte>>();
-                    respMessage.Add(respBuffer.AsArraySegment(0, respMessageSize));
+                    respMessage = respBuffer.AsSpan(0, respMessageSize).ToArray();
 
 
-                    initMessage = new List<ArraySegment<byte>>();
-                    initMessage.Add(initBuffer.AsArraySegment(0, initMessageSize));
+                    initMessage = initBuffer.AsSpan(0, initMessageSize).ToArray();
 
                 }
                 else
                 {
                     initMessageSize = initTransport.WriteMessage(payload, initBuffer);
-                    initMessage = new List<ArraySegment<byte>>();
-                    initMessage.Add(initBuffer.AsArraySegment(0, initMessageSize));
+                    initMessage = initBuffer.AsSpan(0, initMessageSize).ToArray();
 
                     respMessageSize = respTransport.ReadMessage(initMessage, respBuffer);
-                    respMessage = new List<ArraySegment<byte>>();
-                    respMessage.Add(respBuffer.AsArraySegment(0, respMessageSize));
+                    respMessage = respBuffer.AsSpan(0, respMessageSize).ToArray();
 
-                    initMessage = new List<ArraySegment<byte>>();
-                    initMessage.Add(initBuffer.AsArraySegment(0, initMessageSize));
+                    initMessage = initBuffer.AsSpan(0, initMessageSize).ToArray();
                 }
 
-                Assert.Equal(ciphertext, initMessage.MergeToSpan().ToArray());
-                Assert.Equal(payload.MergeToSpan().ToArray(), respMessage.MergeToSpan().ToArray());
+                Assert.Equal(ciphertext, initMessage);
+                Assert.Equal(payload, respMessage);
 
                 Swap(ref initBuffer, ref respBuffer);
                 Swap(ref init, ref resp);
@@ -325,9 +300,7 @@ namespace PortableNoise.Tests
             (bytesWritten, _, _) = initiator.WriteMessage(null, buffer1);
             Assert.True(bytesWritten > 0);
 
-            var lis = new List<ArraySegment<byte>>();
-            lis.Add(new ArraySegment<byte>(buffer1, 0, bytesWritten));
-            (bytesRead, _, _) = responder.ReadMessage(lis, Memory<byte>.Empty);
+            (bytesRead, _, _) = responder.ReadMessage(buffer1.AsSpan(0, bytesWritten), Memory<byte>.Empty);
             Assert.True(bytesRead == 0);
 
 
@@ -335,9 +308,7 @@ namespace PortableNoise.Tests
             Assert.True(bytesWritten > 0);
             Assert.NotNull(responder_transport);
 
-            lis.Clear();
-            lis.Add(new ArraySegment<byte>(buffer1, 0, bytesWritten));
-            (bytesRead, _, initiator_transport) = initiator.ReadMessage(lis, Memory<byte>.Empty);
+            (bytesRead, _, initiator_transport) = initiator.ReadMessage(buffer1.AsSpan(0, bytesWritten), Memory<byte>.Empty);
             Assert.True(bytesRead == 0);
             Assert.NotNull(initiator_transport);
 
@@ -349,9 +320,7 @@ namespace PortableNoise.Tests
             Assert.Equal(0, (int) counter);
             Assert.True(bytesWritten == 16);
 
-            lis.Clear();
-            lis.Add(new ArraySegment<byte>(buffer1, 0, bytesWritten));
-            bytesRead = responder_transport.ReadMessage(counter, lis, buffer2);
+            bytesRead = responder_transport.ReadMessage(counter, buffer1.AsSpan(0, bytesWritten), buffer2);
             Assert.Equal(0, bytesRead);
 
             bytesWritten = responder_transport.WriteMessage(null, buffer1, out counter);
@@ -359,9 +328,7 @@ namespace PortableNoise.Tests
             Assert.True(bytesWritten == 16);
 
 
-            lis.Clear();
-            lis.Add(new ArraySegment<byte>(buffer1, 0, bytesWritten));
-            bytesRead = initiator_transport.ReadMessage(counter, lis, buffer2);
+            bytesRead = initiator_transport.ReadMessage(counter, buffer1.AsSpan(0, bytesWritten), buffer2);
             Assert.Equal(0, bytesRead);
 
 
@@ -370,9 +337,8 @@ namespace PortableNoise.Tests
 
             for (int i = 0; i < 5; i++)
             {
-                lis.Clear();
-                lis.Add(new ArraySegment<byte>(Encoding.UTF8.GetBytes($"Hallo {i}")));
-                bytesWritten = initiator_transport.WriteMessage(lis, buffer1, out counter);
+                var payload = Encoding.UTF8.GetBytes($"Hallo {i}");
+                bytesWritten = initiator_transport.WriteMessage(payload, buffer1, out counter);
                 Assert.Equal(i + 1, (int) counter);
 
                 var byf = new byte[bytesWritten];
@@ -380,24 +346,18 @@ namespace PortableNoise.Tests
                 messages.Add(byf);
             }
 
-            lis.Clear();
-            lis.Add(messages[0]);
-            bytesWritten = responder_transport.ReadMessage(1,lis, buffer2);
+            bytesWritten = responder_transport.ReadMessage(1, messages[0], buffer2);
             Assert.Equal(7, bytesWritten);
             Assert.Equal("Hallo 0", Encoding.UTF8.GetString(buffer2.AsSpan().Slice(0, bytesWritten).ToArray()));
 
             for (int i = messages.Count - 2; i > 0; i--)
             {
-                lis.Clear();
-                lis.Add(messages[i]);
-                bytesWritten = responder_transport.ReadMessage((ulong) i + 1, lis, buffer2);
+                bytesWritten = responder_transport.ReadMessage((ulong) i + 1, messages[i], buffer2);
                 Assert.Equal(7, bytesWritten);
                 Assert.Equal($"Hallo {i}", Encoding.UTF8.GetString(buffer2.AsSpan().Slice(0, bytesWritten).ToArray()));
             }
 
-            lis.Clear();
-            lis.Add(messages[4]);
-            bytesWritten = responder_transport.ReadMessage(5, lis, buffer2);
+            bytesWritten = responder_transport.ReadMessage(5, messages[4], buffer2);
             Assert.Equal(7, bytesWritten);
             Assert.Equal("Hallo 4", Encoding.UTF8.GetString(buffer2.AsSpan().Slice(0, bytesWritten).ToArray()));
 

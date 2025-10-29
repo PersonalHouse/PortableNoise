@@ -77,7 +77,7 @@ namespace PortableNoise.Tests
         [InlineData(CrytoEngineType.BouncyCastle)]
         public void TestSplits(CrytoEngineType para)
         {
-			var data = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray().AsMemory();
+			var data = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray().AsSpan();
 
 			using (var hasher = CrytoEngine.CreateBlake2s(para))
 			{

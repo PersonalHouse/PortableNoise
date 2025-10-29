@@ -13,8 +13,8 @@ namespace PortableNoise.Tests
 			{IntPtr.Zero, IntPtr.Zero},
 			{(IntPtr)1, (IntPtr)64},
 			{(IntPtr)1023, (IntPtr)1024},
-			{(IntPtr)18446744073709551551, (IntPtr)18446744073709551552},
-			{(IntPtr)18446744073709551552, (IntPtr)18446744073709551552}
+			{unchecked((IntPtr)18446744073709551551), unchecked((IntPtr)18446744073709551552)},
+			{unchecked((IntPtr)18446744073709551552), unchecked((IntPtr)18446744073709551552)}
 		};
 
 		[Fact]

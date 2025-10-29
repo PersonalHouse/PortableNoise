@@ -45,20 +45,16 @@ PortableNoise additional:
   - Add helper functions (GetEncryptedMessageSize,GetDecryptedMessageSize)
   - [Noise.Net] supports parsing protocol name at runtime, but PortableNoise not. If crypto parameters are unknown at build time, Table lookup could be used to support this requirement.
   - Change input message type from ReadOnlySpan to ReadOnlySequence.
-  - BouncyCastle doesn't support Span, therefore Span usages has been limited, which makes performance downgrade. The following is the benchmark of 10K of 16KB messages.
+  - The following is the benchmark of 10K of 16KB messages.
 
-  |                                          Method |       Mean |   Error |  StdDev |
-  |------------------------------------------------ |-----------:|--------:|--------:|
-  |                                        Noisenet |   288.7 ms | 0.57 ms | 0.51 ms |
-  |                          PortableNoiseLibsodium |   290.1 ms | 0.47 ms | 0.44 ms |
-  |                       PortableNoiseBouncyCastle | 1,724.3 ms | 2.33 ms | 1.95 ms |
-  |                    PortableNoiseBouncyCastle448 | 1,741.7 ms | 2.16 ms | 1.91 ms |
-  | PortableNoiseBouncyCastle448MultipleSegBaseline | 1,742.4 ms | 1.22 ms | 1.02 ms |
-  |         PortableNoiseBouncyCastle448MultipleSeg | 1,719.5 ms | 1.66 ms | 1.55 ms |
-
-    BouncyCastle said Span may be added recently.https://github.com/bcgit/bc-csharp/issues/339
-    
-    PortableNoise Api may be changed after BouncyCastle releases new version.
+| Method                                          | Mean    | Error    | StdDev   |
+|------------------------------------------------ |--------:|---------:|---------:|
+| Noisenet                                        | 3.129 s | 0.0033 s | 0.0027 s |
+| PortableNoiseLibsodium                          | 3.004 s | 0.0056 s | 0.0053 s |
+| PortableNoiseBouncyCastle                       | 5.282 s | 0.0475 s | 0.0371 s |
+| PortableNoiseBouncyCastle448                    | 5.241 s | 0.0474 s | 0.0444 s |
+| PortableNoiseBouncyCastle448MultipleSegBaseline | 4.702 s | 0.0671 s | 0.0560 s |
+| PortableNoiseBouncyCastle448MultipleSeg         | 4.689 s | 0.0651 s | 0.0577 s |
 
 
 

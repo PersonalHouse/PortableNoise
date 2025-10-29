@@ -39,9 +39,9 @@ namespace PortableNoise
 		public HandshakeState(
 			Protocol<CipherType, DhType, HashType> protocol,
 			bool initiator,
-            ReadOnlyMemory<byte> prologue,
-            ReadOnlyMemory<byte> s,
-            ReadOnlyMemory<byte> rs,
+            ReadOnlySpan<byte> prologue,
+            ReadOnlySpan<byte> s,
+            ReadOnlySpan<byte> rs,
 			IEnumerable<byte[]> psks)
 		{
 			Debug.Assert(psks != null);
@@ -316,45 +316,39 @@ namespace PortableNoise
         /// Thrown if the call to <see cref="HandshakeState&lt;CipherType, DhType, HashType>.ReadMessage(ReadOnlySequence&lt;byte>, Memory&lt;byte>)"/> was expected
         /// or the handshake has already been completed.
         /// </exception>
-        /// <exception cref="ArgumentException">
-        /// Thrown if the output was greater than <see cref="Protocol.MaxMessageLength"/>
-        /// bytes in length, or if the output buffer did not have enough space to hold the ciphertext.
-        /// </exception>
-        public (int, byte[], Transport) WriteMessage(IList<ArraySegment<byte>> payload, Memory<byte> messageBuffer)
+    /// <exception cref="ArgumentException">
+    /// Thrown if the output was greater than <see cref="Protocol.MaxMessageLength"/>
+    /// bytes in length, or if the output buffer did not have enough space to hold the ciphertext.
+    /// </exception>
+    public (int, byte[], Transport) WriteMessage(ReadOnlySpan<byte> payload, Span<byte> messageBuffer)
+	{
+		ThrowIfDisposed();
+
+		if (messagePatterns.Count == 0)
 		{
-			ThrowIfDisposed();
-            if (payload==null)
-            {
-                payload = new List<ArraySegment<byte>>();
-            }
+			throw new InvalidOperationException("Cannot call WriteMessage after the handshake has already been completed.");
+		}
 
-			if (messagePatterns.Count == 0)
-			{
-				throw new InvalidOperationException("Cannot call WriteMessage after the handshake has already been completed.");
-			}
+		var overhead = messagePatterns.Peek().Overhead(dh.DhLen, state.HasKey(), isPsk);
+		var ciphertextSize = payload.Length + overhead;
 
-			var overhead = messagePatterns.Peek().Overhead(dh.DhLen, state.HasKey(), isPsk);
-			var ciphertextSize = payload.Total() + overhead;
+		if (ciphertextSize > Protocol.MaxMessageLength)
+		{
+			throw new ArgumentException($"Noise message must be less than or equal to {Protocol.MaxMessageLength} bytes in length.");
+		}
 
-			if (ciphertextSize > Protocol.MaxMessageLength)
-			{
-				throw new ArgumentException($"Noise message must be less than or equal to {Protocol.MaxMessageLength} bytes in length.");
-			}
+		if (ciphertextSize > messageBuffer.Length)
+		{
+			throw new ArgumentException("Message buffer does not have enough space to hold the ciphertext.");
+		}
 
-			if (ciphertextSize > messageBuffer.Length)
-			{
-				throw new ArgumentException("Message buffer does not have enough space to hold the ciphertext.");
-			}
+		if (!turnToWrite)
+		{
+			throw new InvalidOperationException("Unexpected call to WriteMessage (should be ReadMessage).");
+		}
 
-			if (!turnToWrite)
-			{
-				throw new InvalidOperationException("Unexpected call to WriteMessage (should be ReadMessage).");
-			}
-
-			var next = messagePatterns.Dequeue();
-			var messageBufferLength = messageBuffer.Length;
-
-			foreach (var token in next.Tokens)
+		var next = messagePatterns.Dequeue();
+		var messageBufferLength = messageBuffer.Length;			foreach (var token in next.Tokens)
 			{
 				switch (token)
 				{
@@ -385,33 +379,27 @@ namespace PortableNoise
 			return (ciphertextSize, handshakeHash, transport);
 		}
 
-		private Memory<byte> WriteE(Memory<byte> buffer)
+	private Span<byte> WriteE(Span<byte> buffer)
+	{
+		Debug.Assert(e == null);
+
+		e = dh.GenerateKeyPair();
+		e.PublicKey.CopyTo(buffer);
+		state.MixHash(e.PublicKey);
+
+		if (isPsk)
 		{
-			Debug.Assert(e == null);
-
-			e = dh.GenerateKeyPair();
-			e.PublicKey.CopyTo(buffer);
-			state.MixHash(e.PublicKey);
-
-			if (isPsk)
-			{
-				state.MixKey(e.PublicKey);
-			}
-
-			return buffer.Slice(e.PublicKey.Length);
+			state.MixKey(e.PublicKey);
 		}
 
-		private Memory<byte> WriteS(Memory<byte> buffer)
-		{
-			Debug.Assert(s != null);
+		return buffer.Slice(e.PublicKey.Length);
+	}	private Span<byte> WriteS(Span<byte> buffer)
+	{
+		Debug.Assert(s != null);
 
-            var list = new List<ArraySegment<byte>>();
-            list.Add(s.PublicKey);
-			var bytesWritten = state.EncryptAndHash(list, buffer);
-			return buffer.Slice(bytesWritten);
-		}
-
-
+		var bytesWritten = state.EncryptAndHash(s.PublicKey, buffer);
+		return buffer.Slice(bytesWritten);
+	}
         /// <summary>
         /// Get decrypted message size
         /// </summary>
@@ -451,110 +439,101 @@ namespace PortableNoise
         /// Thrown if the message was greater than <see cref="Protocol.MaxMessageLength"/>
         /// bytes in length, or if the output buffer did not have enough space to hold the plaintext.
         /// </exception>
-        /// <exception cref="System.Security.Cryptography.CryptographicException">
-        /// Thrown if the decryption of the message has failed.
-        /// </exception>
-        public (int, byte[], Transport) ReadMessage(IList<ArraySegment<byte>> message, Memory<byte> payloadBuffer)
+    /// <exception cref="System.Security.Cryptography.CryptographicException">
+    /// Thrown if the decryption of the message has failed.
+    /// </exception>
+    public (int, byte[], Transport) ReadMessage(ReadOnlySpan<byte> message, Memory<byte> payloadBuffer)
+	{
+		ThrowIfDisposed();
+
+        if (messagePatterns.Count == 0)
 		{
-			ThrowIfDisposed();
-
-            if (message == null)
-            {
-                message = new List<ArraySegment<byte>>();
-            }
-
-            if (messagePatterns.Count == 0)
-			{
-				throw new InvalidOperationException("Cannot call WriteMessage after the handshake has already been completed.");
-			}
-
-			var overhead = messagePatterns.Peek().Overhead(dh.DhLen, state.HasKey(), isPsk);
-			var plaintextSize = (int)message.Total() - overhead;
-
-			if (message.Total() > Protocol.MaxMessageLength)
-			{
-				throw new ArgumentException($"Noise message must be less than or equal to {Protocol.MaxMessageLength} bytes in length.");
-			}
-
-			if (message.Total() < overhead)
-			{
-				throw new ArgumentException($"Noise message must be greater than or equal to {overhead} bytes in length.");
-			}
-
-			if (plaintextSize > payloadBuffer.Length)
-			{
-				throw new ArgumentException("Payload buffer does not have enough space to hold the plaintext.");
-			}
-
-			if (turnToWrite)
-			{
-				throw new InvalidOperationException("Unexpected call to ReadMessage (should be WriteMessage).");
-			}
-
-			var next = messagePatterns.Dequeue();
-			var messageLength = message.Total();
-
-			foreach (var token in next.Tokens)
-			{
-				switch (token)
-				{
-					case Token.E: message = ReadE(message); break;
-					case Token.S: message = ReadS(message); break;
-					case Token.EE: DhAndMixKey(e, re); break;
-					case Token.ES: ProcessES(); break;
-					case Token.SE: ProcessSE(); break;
-					case Token.SS: DhAndMixKey(s, rs); break;
-					case Token.PSK: ProcessPSK(); break;
-				}
-			}
-
-			int bytesRead = state.DecryptAndHash(message, payloadBuffer);
-			Debug.Assert(bytesRead == plaintextSize);
-
-			byte[] handshakeHash = null;
-			Transport transport = null;
-
-			if (messagePatterns.Count == 0)
-			{
-				(handshakeHash, transport) = Split();
-			}
-
-			turnToWrite = true;
-			return (plaintextSize, handshakeHash, transport);
+			throw new InvalidOperationException("Cannot call WriteMessage after the handshake has already been completed.");
 		}
 
-		private IList<ArraySegment<byte>> ReadE(IList<ArraySegment<byte>> buffer)
+		var overhead = messagePatterns.Peek().Overhead(dh.DhLen, state.HasKey(), isPsk);
+		var plaintextSize = message.Length - overhead;
+
+		if (message.Length > Protocol.MaxMessageLength)
 		{
-			Debug.Assert(re == null);
+			throw new ArgumentException($"Noise message must be less than or equal to {Protocol.MaxMessageLength} bytes in length.");
+		}
 
-			re = buffer.SliceToArray(0, dh.DhLen);
-			state.MixHash(re);
+		if (message.Length < overhead)
+		{
+			throw new ArgumentException($"Noise message must be greater than or equal to {overhead} bytes in length.");
+		}
 
-			if (isPsk)
+		if (plaintextSize > payloadBuffer.Length)
+		{
+			throw new ArgumentException("Payload buffer does not have enough space to hold the plaintext.");
+		}
+
+		if (turnToWrite)
+		{
+			throw new InvalidOperationException("Unexpected call to ReadMessage (should be WriteMessage).");
+		}
+
+		var next = messagePatterns.Dequeue();
+		var messageLength = message.Length;
+		int offset = 0;
+
+		foreach (var token in next.Tokens)
+		{
+			switch (token)
 			{
-				state.MixKey(re);
+				case Token.E: offset = ReadE(message, offset); break;
+				case Token.S: offset = ReadS(message, offset); break;
+				case Token.EE: DhAndMixKey(e, re); break;
+				case Token.ES: ProcessES(); break;
+				case Token.SE: ProcessSE(); break;
+				case Token.SS: DhAndMixKey(s, rs); break;
+				case Token.PSK: ProcessPSK(); break;
 			}
-
-			return buffer.Slice(re.Length);
 		}
 
-		private IList<ArraySegment<byte>> ReadS(IList<ArraySegment<byte>> message)
+		int bytesRead = state.DecryptAndHash(message.Slice(offset), payloadBuffer.Span);
+		Debug.Assert(bytesRead == plaintextSize);
+
+		byte[] handshakeHash = null;
+		Transport transport = null;
+
+		if (messagePatterns.Count == 0)
 		{
-			Debug.Assert(rs == null);
-
-			var length = state.HasKey() ? dh.DhLen + Aead.TagSize : dh.DhLen;
-			var temp = message.SliceToArray(0, length);
-
-			rs = new byte[dh.DhLen];
-            var lis = new List<ArraySegment<byte>>();
-            lis.Add(temp);
-
-            state.DecryptAndHash(lis, rs);
-
-			return message.Slice(length);
+			(handshakeHash, transport) = Split();
 		}
 
-		private void ProcessES()
+		turnToWrite = true;
+		return (plaintextSize, handshakeHash, transport);
+	}
+
+	private int ReadE(ReadOnlySpan<byte> buffer, int offset)
+	{
+		Debug.Assert(re == null);
+
+		re = buffer.Slice(offset, dh.DhLen).ToArray();
+		state.MixHash(re);
+
+		if (isPsk)
+		{
+			state.MixKey(re);
+		}
+
+		return offset + re.Length;
+	}
+
+	private int ReadS(ReadOnlySpan<byte> message, int offset)
+	{
+		Debug.Assert(rs == null);
+
+		var length = state.HasKey() ? dh.DhLen + Aead.TagSize : dh.DhLen;
+		var temp = message.Slice(offset, length);
+
+		rs = new byte[dh.DhLen];
+        state.DecryptAndHash(temp, rs);
+
+		return offset + length;
+	}		private void ProcessES()
 		{
 			if (role == Role.Alice)
 			{
@@ -605,7 +584,7 @@ namespace PortableNoise
 			return (handshakeHash, transport);
 		}
 
-		private void DhAndMixKey(KeyPair keyPair, ReadOnlyMemory<byte> publicKey)
+		private void DhAndMixKey(KeyPair keyPair, ReadOnlySpan<byte> publicKey)
 		{
 			Debug.Assert(keyPair != null);
 			Debug.Assert(!publicKey.IsEmpty);

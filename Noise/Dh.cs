@@ -18,16 +18,16 @@ namespace PortableNoise
 		/// </summary>
 		KeyPair GenerateKeyPair();
 
-		/// <summary>
-		/// Generates a Diffie-Hellman key pair from the specified private key.
-		/// </summary>
-		KeyPair GenerateKeyPair(ReadOnlyMemory<byte> privateKey);
+	/// <summary>
+	/// Generates a Diffie-Hellman key pair from the specified private key.
+	/// </summary>
+	KeyPair GenerateKeyPair(ReadOnlySpan<byte> privateKey);
 
-		/// <summary>
-		/// Performs a Diffie-Hellman calculation between the private
-		/// key in keyPair and the publicKey and writes an output
-		/// sequence of bytes of length DhLen into sharedKey parameter.
-		/// </summary>
-		void Dh(KeyPair keyPair, ReadOnlyMemory<byte> publicKey, Span<byte> sharedKey);
+	/// <summary>
+	/// Performs a Diffie-Hellman calculation between the private
+	/// key in keyPair and the publicKey and writes an output
+	/// sequence of bytes of length DhLen into sharedKey parameter.
+	/// </summary>
+	void Dh(KeyPair keyPair, ReadOnlySpan<byte> publicKey, Span<byte> sharedKey);
 	}
 }

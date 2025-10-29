@@ -24,7 +24,7 @@ namespace PortableNoise
 		/// <summary>
 		/// Sets k = key. Sets n = 0.
 		/// </summary>
-		public void InitializeKey(ReadOnlyMemory<byte> key)
+		public void InitializeKey(ReadOnlySpan<byte> key)
 		{
 			Debug.Assert(key.Length == Aead.KeySize);
 
@@ -56,7 +56,7 @@ namespace PortableNoise
         /// Otherwise copies the plaintext to the ciphertext parameter,
         /// returns the length of the plaintext and counter used in the nonce parameter.
         /// </summary>
-        public int EncryptWithAd(byte[] ad, IList<ArraySegment<byte>> plaintexts,Memory<byte> ciphertext, out ulong nonce)
+        public int EncryptWithAd(byte[] ad, ReadOnlySpan<byte> plaintext, Span<byte> ciphertext, out ulong nonce)
         {
             if (n == MaxNonce)
             {
@@ -65,19 +65,13 @@ namespace PortableNoise
 
             if (k == null)
             {
-                int t = 0;
-                for(int i = 0; i < plaintexts.Count; i++)
-                {
-                    var plaintext = plaintexts[i];
-                    plaintext.Array.AsMemory(plaintext.Offset, plaintext.Count).CopyTo(ciphertext.Slice(t));
-                    t += plaintext.Count;
-                }
+                plaintext.CopyTo(ciphertext);
                 nonce = n;
-                return t;
+                return plaintext.Length;
             }
 
             nonce = n++;
-            return cipher.Encrypt(k, nonce, ad, plaintexts, ciphertext);
+            return cipher.Encrypt(k, nonce, ad, plaintext, ciphertext);
         }
 
         
@@ -87,7 +81,7 @@ namespace PortableNoise
         /// the length of the ciphertext. If an authentication failure occurs
         /// then n is not incremented and an error is signaled to the caller.
         /// </summary>
-        public int DecryptWithAd(byte[] ad, IList<ArraySegment<byte>> ciphertexts, Memory<byte> plaintext)
+        public int DecryptWithAd(byte[] ad, ReadOnlySpan<byte> ciphertext, Span<byte> plaintext)
 		{
 			if (n == MaxNonce)
 			{
@@ -97,18 +91,12 @@ namespace PortableNoise
 
             if (k == null)
             {
-                int t = 0;
-                for(var i = 0;i < ciphertexts.Count;i++)
-                {
-                    var ciphertext = ciphertexts[i];
-                    ciphertext.Array.AsMemory(ciphertext.Offset, ciphertext.Count).CopyTo(plaintext.Slice(t));
-                    t += ciphertext.Count;
-                }
-                return t;
+                ciphertext.CopyTo(plaintext);
+                return ciphertext.Length;
             }
             
 
-			int bytesRead = cipher.Decrypt(k, n, ad, ciphertexts, plaintext);
+			int bytesRead = cipher.Decrypt(k, n, ad, ciphertext, plaintext);
 			++n;
 
 			return bytesRead;
@@ -119,7 +107,7 @@ namespace PortableNoise
 		/// Otherwise copies the ciphertext to the plaintext parameter and returns
 		/// the length of the ciphertext.
 		/// </summary>
-		public int DecryptWithNonceAndAd(ulong nonce, byte[] ad, IList<ArraySegment<byte>> ciphertexts, Memory<byte> plaintext)
+		public int DecryptWithNonceAndAd(ulong nonce, byte[] ad, ReadOnlySpan<byte> ciphertext, Span<byte> plaintext)
 		{
 			if (nonce == MaxNonce)
             {
@@ -129,41 +117,29 @@ namespace PortableNoise
 
             if (k == null)
             {
-                int t = 0;
-
-                for (var i = 0; i < ciphertexts.Count; i++)
-                {
-                    var ciphertext = ciphertexts[i];
-                    ciphertext.Array.AsMemory(ciphertext.Offset, ciphertext.Count).CopyTo(plaintext.Slice(t));
-                    t += ciphertext.Count;
-                }
-                return t;
+                ciphertext.CopyTo(plaintext);
+                return ciphertext.Length;
             }
             
 
-			int bytesRead = cipher.Decrypt(k, nonce, ad, ciphertexts, plaintext);
+			int bytesRead = cipher.Decrypt(k, nonce, ad, ciphertext, plaintext);
 
 			return bytesRead;
 		}
 
-		/// <summary>
-		/// Sets k = REKEY(k).
-		/// </summary>
-		public void Rekey()
-		{
-			Debug.Assert(HasKey());
+	/// <summary>
+	/// Sets k = REKEY(k).
+	/// </summary>
+	public void Rekey()
+	{
+		Debug.Assert(HasKey());
 
-            var key = new byte[Aead.KeySize + Aead.TagSize];
+        var key = new byte[Aead.KeySize + Aead.TagSize];
+        cipher.Encrypt(k, MaxNonce, zeroLen, zeros, key);
 
-            var lis = new List<ArraySegment<byte>>();
-            lis.Add(zeros);
-            cipher.Encrypt(k, MaxNonce, zeroLen,lis, key);
-
-			k = k ?? new byte[Aead.KeySize];
-            Buffer.BlockCopy(key, Aead.KeySize, k, 0, Aead.TagSize);
-		}
-
-		public void Dispose()
+		k = k ?? new byte[Aead.KeySize];
+        Buffer.BlockCopy(key, Aead.KeySize, k, 0, Aead.TagSize);
+	}		public void Dispose()
 		{
 			if (!disposed)
 			{

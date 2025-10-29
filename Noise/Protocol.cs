@@ -102,7 +102,7 @@ namespace PortableNoise
         /// </exception>
         public HandshakeState<CipherType, DHType, HashType> CreateHandshakeState(
             bool initiator,
-            ReadOnlyMemory<byte> prologue = default,
+            ReadOnlySpan<byte> prologue = default,
 			byte[] s = default,
 			byte[] rs = default,
 			IEnumerable<byte[]> psks = default)

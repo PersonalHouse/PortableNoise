@@ -22,7 +22,7 @@ namespace PortableNoise.Engine.Libsodium
 			return new KeyPair(privateKey, publicKey);
 		}
 
-		public KeyPair GenerateKeyPair(ReadOnlyMemory<byte> privateKey)
+		public KeyPair GenerateKeyPair(ReadOnlySpan<byte> privateKey)
 		{
 			Debug.Assert(privateKey.Length == DhLen);
 
@@ -34,7 +34,7 @@ namespace PortableNoise.Engine.Libsodium
 			return new KeyPair(privateKeyCopy, publicKey);
 		}
 
-		public void Dh(KeyPair keyPair, ReadOnlyMemory<byte> publicKey, Span<byte> sharedKey)
+		public void Dh(KeyPair keyPair, ReadOnlySpan<byte> publicKey, Span<byte> sharedKey)
 		{
 			Debug.Assert(keyPair.PrivateKey != null && keyPair.PrivateKey.Length == DhLen);
 			Debug.Assert(publicKey.Length == DhLen);
@@ -44,7 +44,7 @@ namespace PortableNoise.Engine.Libsodium
             Libsodium.crypto_scalarmult_curve25519(
 				ref MemoryMarshal.GetReference(sharedKey),
 				ref MemoryMarshal.GetReference(keyPair.PrivateKey.AsSpan()),
-				ref MemoryMarshal.GetReference(publicKey.Span)
+				ref MemoryMarshal.GetReference(publicKey)
 			);
 		}
 	}

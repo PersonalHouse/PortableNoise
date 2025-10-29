@@ -32,26 +32,26 @@ namespace PortableNoise.Engine.Libsodium
 		public int HashLen => 64;
 		public int BlockLen => 128;
 
-		public void AppendData(ReadOnlyMemory<byte> data)
+		public void AppendData(ReadOnlySpan<byte> data)
 		{
 			if (!data.IsEmpty)
 			{
 				Libsodium.crypto_generichash_blake2b_update(
 					aligned,
-					ref MemoryMarshal.GetReference(data.Span),
+					ref MemoryMarshal.GetReference(data),
 					(ulong)data.Length
 				);
 			}
 		}
 
-		public void GetHashAndReset(Memory<byte> hash)
+		public void GetHashAndReset(Span<byte> hash)
 		{
 			Debug.Assert(hash.Length == HashLen);
 
 			Libsodium.crypto_generichash_blake2b_final(
 				aligned,
-				ref MemoryMarshal.GetReference(hash.Span),
-				(UIntPtr)hash.Length
+			ref MemoryMarshal.GetReference(hash),
+			(UIntPtr)hash.Length
 			);
 
 			Reset();

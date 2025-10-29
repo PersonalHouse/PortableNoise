@@ -50,46 +50,44 @@ namespace PortableNoise.Engine.InProject
 		public int HashLen => OutputSize;
 		public int BlockLen => BlockSize;
 
-		public void AppendData(ReadOnlyMemory<byte> data)
+	public void AppendData(ReadOnlySpan<byte> data)
+	{
+		if (data.IsEmpty)
 		{
-			if (data.IsEmpty)
-			{
-				return;
-			}
-
-			var buffer = this.buffer.AsMemory();
-			var left = BlockSize - position;
-
-			if (position > 0 && data.Length > left)
-			{
-				data.Slice(0, left).CopyTo(buffer.Slice(position));
-
-				t0 += BlockSize;
-				t1 += t0 == 0 ? 1u : 0;
-
-				Compress(buffer.Span);
-				data = data.Slice(left);
-
-				position = 0;
-			}
-
-			while (data.Length > BlockSize)
-			{
-				t0 += BlockSize;
-				t1 += t0 == 0 ? 1u : 0;
-
-				Compress(data.Slice(0, BlockSize).Span);
-				data = data.Slice(BlockSize);
-			}
-
-			if (data.Length > 0)
-			{
-				data.CopyTo(buffer.Slice(position));
-				position += data.Length;
-			}
+			return;
 		}
 
-		public void GetHashAndReset(Memory<byte> hash)
+		var buffer = this.buffer.AsSpan();
+		var left = BlockSize - position;
+
+		if (position > 0 && data.Length > left)
+		{
+			data.Slice(0, left).CopyTo(buffer.Slice(position));
+
+			t0 += BlockSize;
+			t1 += t0 == 0 ? 1u : 0;
+
+			Compress(this.buffer);
+			data = data.Slice(left);
+
+			position = 0;
+		}
+
+		while (data.Length > BlockSize)
+		{
+			t0 += BlockSize;
+			t1 += t0 == 0 ? 1u : 0;
+
+			Compress(data.Slice(0, BlockSize));
+			data = data.Slice(BlockSize);
+		}
+
+		if (data.Length > 0)
+		{
+			data.CopyTo(buffer.Slice(position));
+			position += data.Length;
+		}
+	}		public void GetHashAndReset(Span<byte> hash)
 		{
 			Debug.Assert(hash.Length == HashLen);
 
@@ -99,7 +97,7 @@ namespace PortableNoise.Engine.InProject
 			buffer.AsSpan(position).Fill(0);
 			Compress(buffer);
 
-			MemoryMarshal.AsBytes(h.AsSpan()).CopyTo(hash.Span);
+			MemoryMarshal.AsBytes(h.AsSpan()).CopyTo(hash);
 			Reset();
 		}
 

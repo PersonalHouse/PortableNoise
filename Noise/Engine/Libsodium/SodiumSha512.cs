@@ -23,31 +23,29 @@ namespace PortableNoise.Engine.Libsodium
 		public int HashLen => 64;
 		public int BlockLen => 128;
 
-		public void AppendData(ReadOnlyMemory<byte> data)
+	public void AppendData(ReadOnlySpan<byte> data)
+	{
+		if (!data.IsEmpty)
 		{
-			if (!data.IsEmpty)
-			{
-				Libsodium.crypto_hash_sha512_update(
-					state,
-					ref MemoryMarshal.GetReference(data.Span),
-					(ulong)data.Length
-				);
-			}
-		}
-
-		public void GetHashAndReset(Memory<byte> hash)
-		{
-			Debug.Assert(hash.Length == HashLen);
-
-			Libsodium.crypto_hash_sha512_final(
+			Libsodium.crypto_hash_sha512_update(
 				state,
-				ref MemoryMarshal.GetReference(hash.Span)
+				ref MemoryMarshal.GetReference(data),
+				(ulong)data.Length
 			);
-
-			Reset();
 		}
+	}
 
-		private void Reset()
+	public void GetHashAndReset(Span<byte> hash)
+	{
+		Debug.Assert(hash.Length == HashLen);
+
+		Libsodium.crypto_hash_sha512_final(
+			state,
+			ref MemoryMarshal.GetReference(hash)
+		);
+
+		Reset();
+	}		private void Reset()
 		{
 			Libsodium.crypto_hash_sha512_init(state);
 		}

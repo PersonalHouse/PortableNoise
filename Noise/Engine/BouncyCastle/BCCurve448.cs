@@ -32,7 +32,7 @@ namespace PortableNoise.Engine.BouncyCastle
             return new KeyPair(prikp.GetEncoded(), pubkp.GetEncoded());
         }
 
-        public KeyPair GenerateKeyPair(ReadOnlyMemory<byte> privateKey)
+        public KeyPair GenerateKeyPair(ReadOnlySpan<byte> privateKey)
         {
             Debug.Assert(privateKey.Length == DhLen);
 
@@ -41,7 +41,7 @@ namespace PortableNoise.Engine.BouncyCastle
 
         }
 
-        public void Dh(KeyPair keyPair, ReadOnlyMemory<byte> publicKey, Span<byte> sharedKey)
+        public void Dh(KeyPair keyPair, ReadOnlySpan<byte> publicKey, Span<byte> sharedKey)
         {
             Debug.Assert(keyPair.PrivateKey != null && keyPair.PrivateKey.Length == DhLen);
             Debug.Assert(publicKey.Length == DhLen);
