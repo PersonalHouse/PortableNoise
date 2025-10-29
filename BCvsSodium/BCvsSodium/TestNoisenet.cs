@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Environments;
+using BenchmarkDotNet.Jobs;
 
 using Org.BouncyCastle.Crypto.Parameters;
 
@@ -16,6 +19,8 @@ using PortableNoise;
 
 namespace BCvsSodium
 {
+    [SimpleJob(RuntimeMoniker.Net90)]
+    [SimpleJob(RuntimeMoniker.NativeAot90)]
     public class TestNoisenet
     {
         List<byte[]> messages;

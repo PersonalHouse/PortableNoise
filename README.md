@@ -4,7 +4,7 @@
 
 
 
-.NET Standard 2.0 implementation of the [Noise Protocol Framework](https://noiseprotocol.org/)
+.NET 6.0 implementation of the [Noise Protocol Framework](https://noiseprotocol.org/)
 (revision 33 of the [spec](https://noiseprotocol.org/noise.html)). 
 
 Noise.Net features:
@@ -47,16 +47,25 @@ PortableNoise additional:
   - Change input message type from ReadOnlySpan to ReadOnlySequence.
   - The following is the benchmark of 10K of 16KB messages.
 
-| Method                                          | Mean    | Error    | StdDev   |
-|------------------------------------------------ |--------:|---------:|---------:|
-| Noisenet                                        | 3.129 s | 0.0033 s | 0.0027 s |
-| PortableNoiseLibsodium                          | 3.004 s | 0.0056 s | 0.0053 s |
-| PortableNoiseBouncyCastle                       | 5.282 s | 0.0475 s | 0.0371 s |
-| PortableNoiseBouncyCastle448                    | 5.241 s | 0.0474 s | 0.0444 s |
-| PortableNoiseBouncyCastle448MultipleSegBaseline | 4.702 s | 0.0671 s | 0.0560 s |
-| PortableNoiseBouncyCastle448MultipleSeg         | 4.689 s | 0.0651 s | 0.0577 s |
+
+```
+| Method                                          | Job           | Runtime       | Mean    | Error    | StdDev   |
+|------------------------------------------------ |-------------- |-------------- |--------:|---------:|---------:|
+| Noisenet                                        | .NET 9.0      | .NET 9.0      | 3.124 s | 0.0011 s | 0.0009 s |
+| PortableNoiseLibsodium                          | .NET 9.0      | .NET 9.0      | 2.988 s | 0.0043 s | 0.0040 s |
+| PortableNoiseBouncyCastle                       | .NET 9.0      | .NET 9.0      | 4.576 s | 0.0061 s | 0.0057 s |
+| PortableNoiseBouncyCastle448                    | .NET 9.0      | .NET 9.0      | 4.567 s | 0.0098 s | 0.0086 s |
+| PortableNoiseBouncyCastle448MultipleSegBaseline | .NET 9.0      | .NET 9.0      | 4.086 s | 0.0072 s | 0.0064 s |
+| PortableNoiseBouncyCastle448MultipleSeg         | .NET 9.0      | .NET 9.0      | 4.073 s | 0.0038 s | 0.0034 s |
+| Noisenet                                        | NativeAOT 9.0 | NativeAOT 9.0 | 3.014 s | 0.0031 s | 0.0029 s |
+| PortableNoiseLibsodium                          | NativeAOT 9.0 | NativeAOT 9.0 | 3.015 s | 0.0023 s | 0.0021 s |
+| PortableNoiseBouncyCastle                       | NativeAOT 9.0 | NativeAOT 9.0 | 4.776 s | 0.0050 s | 0.0044 s |
+| PortableNoiseBouncyCastle448                    | NativeAOT 9.0 | NativeAOT 9.0 | 4.823 s | 0.0084 s | 0.0079 s |
+| PortableNoiseBouncyCastle448MultipleSegBaseline | NativeAOT 9.0 | NativeAOT 9.0 | 4.276 s | 0.0043 s | 0.0038 s |
+| PortableNoiseBouncyCastle448MultipleSeg         | NativeAOT 9.0 | NativeAOT 9.0 | 4.272 s | 0.0172 s | 0.0152 s |
 
 
+```
 
 Todo:
 

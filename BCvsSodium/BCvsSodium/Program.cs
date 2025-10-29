@@ -2,6 +2,9 @@
 using System.Buffers.Binary;
 
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Environments;
+using BenchmarkDotNet.Jobs;
 
 using Noise;
 
@@ -11,6 +14,23 @@ using Org.BouncyCastle.Crypto.Parameters;
 
 namespace BCvsSodium
 {
+    public class JitVsAotConfig : ManualConfig
+    {
+        public JitVsAotConfig()
+        {
+            // Add regular JIT job
+            AddJob(Job.Default
+                .WithId("JIT")
+                .WithRuntime(CoreRuntime.Core90));
+
+            // Add NativeAOT job
+            AddJob(Job.Default
+                .WithId("NativeAOT")
+                .WithRuntime(NativeAotRuntime.Net90));
+        }
+    }
+
+    [Config(typeof(JitVsAotConfig))]
     public class Program
     {
         byte[] data;
