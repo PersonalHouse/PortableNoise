@@ -42,7 +42,6 @@ namespace PortableNoise.Tests
 			}
 		}
 
-        //[Fact(Skip = "Takes too long to complete.")]
 
         [Theory]
         [InlineData(CrytoEngineType.Libsodium)]
@@ -71,7 +70,6 @@ namespace PortableNoise.Tests
 			}
 		}
 
-        //[Fact(Skip = "Takes too long to complete.")]
         [Theory]
         [InlineData(CrytoEngineType.Libsodium)]
         [InlineData(CrytoEngineType.BouncyCastle)]

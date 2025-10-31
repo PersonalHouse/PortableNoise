@@ -139,7 +139,28 @@ namespace PortableNoise
 
 		k = k ?? new byte[Aead.KeySize];
         Buffer.BlockCopy(key, Aead.KeySize, k, 0, Aead.TagSize);
-	}		public void Dispose()
+	}
+
+		/// <summary>
+		/// Creates a deep copy of this CipherState with the same key and nonce.
+		/// Used for keeping old keys during rekey operations.
+		/// </summary>
+		public CipherState<CipherType> Clone()
+		{
+			var clone = new CipherState<CipherType>();
+			
+			if (k != null)
+			{
+				clone.k = new byte[k.Length];
+				k.CopyTo(clone.k.AsSpan());
+			}
+			
+			clone.n = n;
+			
+			return clone;
+		}
+
+		public void Dispose()
 		{
 			if (!disposed)
 			{

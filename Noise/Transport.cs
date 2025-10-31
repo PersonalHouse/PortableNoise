@@ -138,6 +138,16 @@ namespace PortableNoise
 		/// Thrown if the current instance is a one-way stream.
 		/// </exception>
 		void RekeyResponderToInitiator();
+
+		/// <summary>
+		/// Creates a deep copy of this Transport with cloned cipher states.
+		/// Useful for keeping old keys during rekey operations.
+		/// </summary>
+		/// <returns>A new Transport instance with cloned cipher states.</returns>
+		/// <exception cref="ObjectDisposedException">
+		/// Thrown if the current instance has already been disposed.
+		/// </exception>
+		Transport CloneTransport();
 	}
 
 	internal sealed class Transport<CipherType> : Transport where CipherType : Cipher, new()
@@ -282,6 +292,19 @@ namespace PortableNoise
 			}
 
 			c2.Rekey();
+		}
+
+		/// <summary>
+		/// Creates a deep copy of this Transport with cloned cipher states.
+		/// </summary>
+		public Transport CloneTransport()
+		{
+			Exceptions.ThrowIfDisposed(disposed, nameof(Transport<CipherType>));
+
+			var clonedC1 = c1?.Clone();
+			var clonedC2 = c2?.Clone();
+
+			return new Transport<CipherType>(initiator, clonedC1, clonedC2);
 		}
 
 		public void Dispose()
